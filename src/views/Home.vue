@@ -3,10 +3,10 @@
     <standard-table v-model="conf1"
                     :row-key="record => record.userId"
                     ref="table1"
-                    :loading.sync="loading">
-      <span slot="sex"
+                    :loading.sync="loading" bordered>
+      <!-- <span slot="sex"
             slot-scope="data"
-            style="color: #48f;font-weight:bold">{{data.record.sex === 1 ? '男' : '女'}}</span>
+            style="color: #48f;font-weight:bold">{{data.record.sex === 1 ? '男' : '女'}}</span> -->
     </standard-table>
   </div>
 </template>
@@ -34,7 +34,8 @@ export default {
           {
             title: '性别',
             dataIndex: 'sex',
-            scopedSlots: { customRender: 'sex' }
+            formatter: (row) => row.sex === 1 ? '男' : '女',
+            style: (row) => row.sex === 1 ? 'color: #49f' : 'color: #fa3'
           },
           {
             title: '职位',

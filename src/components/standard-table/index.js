@@ -1,12 +1,13 @@
 import StandardTable from './src/standard-table.vue'
 StandardTable.install = function (Vue, opt = {}) {
   const defaultOption = {
+    defaultTableOptions: {},
     requestPage: 'page',
     requestPageSize: 'pageSize',
     responseItems: 'data.items',
     responseTotal: 'data.total',
     pageSize: 20,
-    pageSizes: [10, 20, 30, 40, 50],
+    pageSizes: ['10', '20', '30', '40', '50'],
     axiosMethod: 'post',
     axiosConfig: {
       headers: {

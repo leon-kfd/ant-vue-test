@@ -1,30 +1,42 @@
 <template>
   <div class="__standard-table">
     <div class="__table-box">
-      <a-table v-bind="{ ...($STANDARD ? $STANDARD.defaultTableOptions : {}),...$attrs}"
-               v-on="$listeners"
-               :columns="conf.row"
-               :data-source="conf.data"
-               :loading="loading"
-               :pagination="false"
-               ref="table">
-        <template v-for="item in slotRowList"
-                  :slot="item.scopedSlots.customRender"
-                  slot-scope="text, record, index">
-          <slot :name="item.scopedSlots.customRender"
-                v-bind="{text, record, index}"></slot>
+      <a-table
+        v-bind="{ ...($STANDARD ? $STANDARD.defaultTableOptions : {}),...$attrs}"
+        v-on="$listeners"
+        :columns="conf.row"
+        :data-source="conf.data"
+        :loading="loading"
+        :pagination="false"
+        ref="table">
+        <template
+          v-for="item in slotRowList"
+          :slot="item.scopedSlots.customRender"
+          slot-scope="text, record, index">
+          <slot
+            :name="item.scopedSlots.customRender"
+            v-bind="{text, record, index}"></slot>
         </template>
-        <template v-if="conf.operation"
-                  slot="_operation"
-                  slot-scope="text, record">
+        <template v-for="item in normalRowList" :slot="`_${item.dataIndex || item.key}`" slot-scope="text, record">
+          <div
+            :key="item.dataIndex || item.key"
+            :style="typeof item.style === 'function' ? item.style(record) : item.style">
+            {{ typeof item.formatter === 'function' ? item.formatter(record) : text }}
+          </div>
+        </template>
+        <template
+          v-if="conf.operation"
+          slot="_operation"
+          slot-scope="text, record">
           <template v-for="item in conf.operation.btns">
-            <a-button v-if="item.show ? item.show(record) : true"
-                      :key="item.label"
-                      :type="item.type || 'link'"
-                      :size="item.size || 'small'"
-                      :disabled="item.disabled ? item.disabled(record) : false"
-                      :style="(item.style && typeof item.style == 'function') ? item.style(record) : item.style"
-                      @click="item.fn && item.fn(record)">{{typeof item.label == 'function' ? item.label(record) : item.label}}</a-button>
+            <a-button
+              v-if="item.show ? item.show(record) : true"
+              :key="item.label"
+              :type="item.type || 'link'"
+              :size="item.size || 'small'"
+              :disabled="item.disabled ? item.disabled(record) : false"
+              :style="(item.style && typeof item.style == 'function') ? item.style(record) : item.style"
+              @click="item.fn && item.fn(record)">{{ typeof item.label == 'function' ? item.label(record) : item.label }}</a-button>
           </template>
         </template>
       </a-table>
@@ -33,16 +45,18 @@
       <div class="__footer-btn-box">
         <slot name="footerLeft"></slot>
       </div>
-      <div class="__pagination-box"
-           v-if="conf.pagination"
-           :style="{'text-align': (conf.pagination && conf.pagination.align) || 'right'}">
-        <a-pagination @change="handleCurrentChange"
-                      @showSizeChange="handleSizeChange"
-                      v-model="currentPage"
-                      :pageSize="currentPageSize"
-                      show-size-changer
-                      :pageSizeOptions="(conf.pagination && conf.pagination.pageSizes) || this.$STANDARD.pageSizes"
-                      :total="total" />
+      <div
+        class="__pagination-box"
+        v-if="conf.pagination"
+        :style="{'text-align': (conf.pagination && conf.pagination.align) || 'right'}">
+        <a-pagination
+          @change="handleCurrentChange"
+          @showSizeChange="handleSizeChange"
+          v-model="currentPage"
+          :pageSize="currentPageSize"
+          show-size-changer
+          :pageSizeOptions="(conf.pagination && conf.pagination.pageSizes) || this.$STANDARD.pageSizes"
+          :total="total" />
       </div>
     </div>
   </div>
@@ -58,7 +72,10 @@ export default {
     event: 'update'
   },
   props: {
-    conf: Object,
+    conf: {
+      type: Object,
+      default: () => {}
+    },
     loading: {
       default: false,
       type: Boolean
@@ -70,12 +87,9 @@ export default {
       currentPageSize: 20,
       total: 0,
       isStaticPagination: false,
-      staticData: []
-    }
-  },
-  computed: {
-    slotRowList () {
-      return this.conf.row.filter(item => item.scopedSlots)
+      staticData: [],
+      slotRowList: [],
+      normalRowList: []
     }
   },
   mounted () {
@@ -83,12 +97,14 @@ export default {
   },
   methods: {
     init () {
+      // 初始化分页逻辑
       this.isStaticPagination = (this.conf.pagination && this.conf.pagination.static) || false
       this.currentPageSize = (this.conf.pagination && this.conf.pagination.pageSize) || this.$STANDARD.pageSize
       if (this.isStaticPagination) {
         this.total = this.conf.data.length
         this.staticData = this.conf.data
       }
+      // 初始化操作栏
       if (this.conf.operation) {
         const operationConf = {
           title: '操作',
@@ -98,6 +114,18 @@ export default {
         }
         this.conf.row.push(operationConf)
       }
+      // 初始化slot与formatter等
+      this.slotRowList = this.conf.row.filter(item => item.scopedSlots).map(item => {
+        item.isSlot = true
+        return item
+      })
+      this.normalRowList = this.conf.row.filter(item => !item.scopedSlots).map(item => {
+        item.isSlot = false
+        item.scopedSlots = {
+          customRender: `_${item.dataIndex || item.key}`
+        }
+        return item
+      })
     },
     handleSizeChange (curr, val) {
       this.currentPageSize = val
@@ -131,7 +159,8 @@ export default {
       })
       return result
     },
-    fetch () {
+    fetch (fromFisrtPage) {
+      if (fromFisrtPage) this.currentPage = 1
       return new Promise((resolve, reject) => {
         this.$emit('update:loading', true)
         const params = this.conf.params || {}
@@ -204,7 +233,7 @@ export default {
   }
 }
 </script>
-<style lang='scss' scoped>
+<style scoped>
 .__footer-box {
   margin: 15px 0;
   zoom: 1;
