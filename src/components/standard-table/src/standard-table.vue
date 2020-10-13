@@ -65,8 +65,13 @@
 <script>
 import axios from 'axios'
 import { clone } from '../utils/object-method'
+import { Table, Pagination } from 'ant-design-vue'
 export default {
   name: 'StandardTable',
+  components: {
+    'a-table': Table,
+    'a-pagination': Pagination
+  },
   model: {
     prop: 'conf',
     event: 'update'
